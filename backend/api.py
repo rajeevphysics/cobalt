@@ -67,10 +67,10 @@ async def predict(data: dict):
     message = f"Your ExoPlanet is a {labels[pred_num]} ({confidence}% confident)."
 
     return {
-        "prediction_label": labels[pred_num],
+        "overall_prediction": labels[pred_num],
         "prediction_numeric": pred_num,
-        "confidence_percent": confidence,
-        "breakdown_percent": breakdown
+        "prediction_confidence(%)": confidence,
+        "probability_breakdown(%)": breakdown
     }
 
 
