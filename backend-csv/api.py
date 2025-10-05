@@ -4,6 +4,8 @@ from fastapi.responses import StreamingResponse
 import pandas as pd
 import io
 from joblib import load
+from fastapi.responses import JSONResponse
+
 
 app = FastAPI()
 
@@ -60,12 +62,22 @@ async def predict_csv(file: UploadFile = File(...)):
         2: "False Positive"
     })
 
+    summary = {
+        "Candidate Planets": int((dataset["predictions"] == "Candidate Planet").sum()),
+        "Confirmed Planets": int((dataset["predictions"] == "Confirmed Planet").sum()),
+        "False Positives": int((dataset["predictions"] == "False Positive").sum()),
+        "Average Confidence (%)": round(dataset["confidence(%)"].mean(), 2)
+    }
+
+    # Convert DataFrame to CSV (as text)
     output = io.StringIO()
     dataset.to_csv(output, index=False)
     output.seek(0)
+    csv_text = output.getvalue()
 
-    return StreamingResponse(
-        io.BytesIO(output.getvalue().encode()),
-        media_type="text/csv",
-        headers={"Content-Disposition": "attachment; filename=predictions.csv"}
-    )
+    # Combine JSON + CSV text in one response
+    return JSONResponse(content={
+        "summary": summary,
+        "csv": csv_text
+    })
+
