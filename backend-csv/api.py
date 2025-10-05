@@ -1,6 +1,6 @@
 from fastapi import FastAPI, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, StreamingResponse
 import pandas as pd
 import io
 from joblib import load
@@ -8,16 +8,14 @@ import numpy as np
 
 app = FastAPI()
 
-# Allow access from your website
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # allow all origins for now
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# Load your XGBoost model (scikit-learn wrapper)
 model = load("ExoPlanet_ClassifierXGBoost.joblib")
 print("✅ XGBoost model loaded successfully!")
 
@@ -27,9 +25,9 @@ def home():
 
 @app.post("/predict_csv")
 async def predict_csv(file: UploadFile = File(...)):
+    # --- read CSV ---
     dataset = pd.read_csv(file.file)
 
-    # Columns expected by the model
     params = [
         "orbital_period",
         "planet_radius",
@@ -38,18 +36,14 @@ async def predict_csv(file: UploadFile = File(...)):
         "transit_depth",
         "transit_duration"
     ]
-
-    # Safely select expected columns (fill missing ones with 0)
     X = dataset.reindex(columns=params, fill_value=0)
 
-    # Model predictions
+    # --- predictions ---
     probabilities = model.predict_proba(X)
     prophecy = model.predict(X)
 
-    # Add predictions to dataset
     dataset["predictions"] = prophecy
-    confidences = []
-    breakdowns = []
+    confidences, breakdowns = [], []
 
     for prob in probabilities:
         conf = round(float(max(prob)) * 100, 2)
@@ -59,14 +53,13 @@ async def predict_csv(file: UploadFile = File(...)):
         )
 
     dataset["confidence(%)"] = confidences
-    dataset["probability breakdown (Candidate, Confirmed, False Positive)"] = breakdowns
+    dataset["probability_breakdown"] = breakdowns
     dataset["predictions"] = dataset["predictions"].map({
         0: "Candidate Planet",
         1: "Confirmed Planet",
         2: "False Positive"
     })
 
-    # --- SUMMARY STATS ---
     summary = {
         "Candidate Planets": int((dataset["predictions"] == "Candidate Planet").sum()),
         "Confirmed Planets": int((dataset["predictions"] == "Confirmed Planet").sum()),
@@ -74,15 +67,26 @@ async def predict_csv(file: UploadFile = File(...)):
         "Average Confidence (%)": float(round(dataset["confidence(%)"].mean(), 2))
     }
 
-    # Convert DataFrame to CSV (as text)
+    # --- save CSV to memory for later download ---
     output = io.StringIO()
     dataset.to_csv(output, index=False)
     output.seek(0)
-    csv_text = output.getvalue()
 
-    # Return both summary + CSV safely
-    return JSONResponse(content={
-        "summary": summary,
-        "csv": str(csv_text)
-    })
+    # store for /download_csv
+    global last_csv
+    last_csv = output.getvalue()
 
+    return JSONResponse(content={"summary": summary, "message": "Prediction complete. Use /download_csv to get the file."})
+
+@app.get("/download_csv")
+def download_csv():
+    """Downloads the most recently generated predictions CSV"""
+    global last_csv
+    if not last_csv:
+        return JSONResponse(content={"error": "No CSV generated yet."}, status_code=400)
+
+    return StreamingResponse(
+        io.BytesIO(last_csv.encode()),
+        media_type="text/csv",
+        headers={"Content-Disposition": "attachment; filename=predictions.csv"}
+    )
