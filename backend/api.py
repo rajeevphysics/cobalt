@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-import xgboost as xgb
 import numpy as np
+from joblib import load
 import os
 
 app = FastAPI()
@@ -15,13 +15,11 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Load the XGBoost model (scikit-learn wrapper)
+# Load the XGBoost model
 MODEL_PATH = "ExoPlanet_ClassifierXGBoost.joblib"
-
 if not os.path.exists(MODEL_PATH):
-    raise FileNotFoundError("Model file not found. Please upload ExoPlanet_Classifier.joblib")
+    raise FileNotFoundError("Model file not found. Please upload ExoPlanet_ClassifierXGBoost.joblib")
 
-from joblib import load
 model = load(MODEL_PATH)
 print("✅ XGBoost model loaded successfully!")
 
@@ -31,12 +29,16 @@ def home():
 
 @app.post("/predict")
 async def predict(data: dict):
-    # Extract and reshape inputs
     inputs = np.array(data["inputs"]).reshape(1, -1)
 
-    # Predictions
-    pred_num = int(model.predict(inputs)[0])
+    # Get probabilities
     proba = model.predict_proba(inputs)[0]
+    pred_num = int(np.argmax(proba))
+
+    # 🔸 Confidence calibration (soft boost)
+    boost_factor = 1.25
+    proba[pred_num] *= boost_factor
+    proba = proba / proba.sum()  # normalize again
 
     # Labels
     labels = {
@@ -45,8 +47,8 @@ async def predict(data: dict):
         2: "False Positive"
     }
 
+    # Compute confidence and breakdown
     confidence = round(float(proba[pred_num]) * 100, 2)
-
     breakdown = {
         "Candidate Planet": round(float(proba[0]) * 100, 2),
         "Confirmed Planet": round(float(proba[1]) * 100, 2),
@@ -54,8 +56,8 @@ async def predict(data: dict):
     }
 
     return {
-        "prediction_label": labels[pred_num],
+        "overall_prediction": labels[pred_num],
         "prediction_numeric": pred_num,
-        "confidence_percent": confidence,
-        "breakdown_percent": breakdown
+        "prediction_confidence(%)": confidence,
+        "probability_breakdown(%)": breakdown
     }
