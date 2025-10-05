@@ -169,3 +169,34 @@
 .retro-glow {
   text-shadow: 0 0 5px currentColor, 0 0 10px currentColor;
 }
+
+/* Custom scrollbar for webkit browsers (Chrome, Safari, Edge) */
+::-webkit-scrollbar {
+  width: 12px;
+  height: 12px;
+}
+
+::-webkit-scrollbar-track {
+  background: oklch(0.08 0 0); /* Black background */
+  border: 1px solid oklch(0.3 0 0); /* Dark gray border */
+}
+
+::-webkit-scrollbar-thumb {
+  background: oklch(0.45 0 0); /* Medium gray thumb */
+  border: 2px solid oklch(0.08 0 0); /* Black border around thumb */
+  border-radius: 0px; /* Square corners for retro look */
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: oklch(0.55 0 0); /* Lighter gray on hover */
+}
+
+::-webkit-scrollbar-thumb:active {
+  background: oklch(0.65 0 0); /* Even lighter when active */
+}
+
+/* Firefox scrollbar styling */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: oklch(0.45 0 0) oklch(0.08 0 0); /* thumb track */
+}

@@ -1,8 +1,8 @@
 "use client"
 
 import React from "react"
-import { useRef, useState, useMemo, useCallback } from "react"
-import { Canvas, useFrame } from "@react-three/fiber"
+import { useRef, useState, useMemo, useCallback, useEffect } from "react"
+import { Canvas, useFrame, useThree } from "@react-three/fiber"
 import { OrbitControls, Html } from "@react-three/drei"
 import * as THREE from "three"
 import type { Exoplanet, StarData } from "./exoplanet-visualization"
@@ -13,6 +13,7 @@ interface ExoplanetMapProps {
   selectedPlanet: Exoplanet | null
   onSelectPlanet: (planet: Exoplanet) => void
   isPlaying: boolean
+  zoomLevel: number
 }
 
 function HostStar({ starData }: { starData: StarData }) {
@@ -28,7 +29,7 @@ function HostStar({ starData }: { starData: StarData }) {
 
   const starSize = starData.visualScale || 1.0
 
-  const starColor = "#ffffff" // All stars are white in black and white mode
+  const starColor = starData.color
 
   return (
     <group>
@@ -142,13 +143,11 @@ const Planet = React.memo(function Planet({
         <meshStandardMaterial color={color} emissive={color} emissiveIntensity={0.5} />
       </mesh>
 
-      {(hovered || isSelected) && (
-        <Html position={[0, planetSize + 0.1, 0]} center distanceFactor={8}>
-          <div className="bg-background/90 border border-primary/50 px-2 py-1 text-xs font-mono text-primary whitespace-nowrap pointer-events-none">
-            {exoplanet.name}
-          </div>
-        </Html>
-      )}
+      <Html position={[0, planetSize + 0.5, 0]} center distanceFactor={8}>
+        <div className="bg-background/90 border border-primary/50 px-2 py-1 text-xs font-mono text-primary whitespace-nowrap pointer-events-none">
+          {exoplanet.name}
+        </div>
+      </Html>
 
       {/* Selection indicator */}
       {isSelected && (
@@ -174,7 +173,72 @@ function InfiniteGrid() {
   )
 }
 
-function Scene({ exoplanet, starData, selectedPlanet, onSelectPlanet, isPlaying }: ExoplanetMapProps) {
+function StarlightHeadliner() {
+  const starsRef = useRef<THREE.Points>(null)
+
+  const { positions, sizes, colors } = useMemo(() => {
+    const count = 3000 // Increased from 2000
+    const positions = new Float32Array(count * 3)
+    const sizes = new Float32Array(count)
+    const colors = new Float32Array(count * 3)
+
+    for (let i = 0; i < count; i++) {
+      // Position stars on a large sphere (radius 80-100)
+      const radius = 80 + Math.random() * 20
+      const theta = Math.random() * Math.PI * 2
+      const phi = Math.acos(2 * Math.random() - 1)
+
+      positions[i * 3] = radius * Math.sin(phi) * Math.cos(theta)
+      positions[i * 3 + 1] = radius * Math.sin(phi) * Math.sin(theta)
+      positions[i * 3 + 2] = radius * Math.cos(phi)
+
+      // Larger star sizes for better visibility (increased from 0.1-0.6 to 0.3-1.5)
+      sizes[i] = Math.random() * 1.2 + 0.3
+
+      // Add brightness variation - some stars brighter than others
+      const brightness = 0.7 + Math.random() * 0.3 // Range from 0.7 to 1.0
+      colors[i * 3] = brightness
+      colors[i * 3 + 1] = brightness
+      colors[i * 3 + 2] = brightness
+    }
+
+    return { positions, sizes, colors }
+  }, [])
+
+  const geometry = useMemo(() => {
+    const geo = new THREE.BufferGeometry()
+    geo.setAttribute("position", new THREE.BufferAttribute(positions, 3))
+    geo.setAttribute("size", new THREE.BufferAttribute(sizes, 1))
+    geo.setAttribute("color", new THREE.BufferAttribute(colors, 3))
+    return geo
+  }, [positions, sizes, colors])
+
+  return (
+    <points ref={starsRef} geometry={geometry}>
+      <pointsMaterial
+        color="#ffffff"
+        size={0.4} // Increased from 0.15
+        sizeAttenuation={true}
+        transparent={true}
+        opacity={0.9} // Increased from 0.6
+        depthWrite={false}
+        vertexColors={true} // Enable per-vertex colors for brightness variation
+      />
+    </points>
+  )
+}
+
+function CameraController({ zoomLevel }: { zoomLevel: number }) {
+  const { camera } = useThree()
+
+  useEffect(() => {
+    camera.position.setLength(zoomLevel)
+  }, [zoomLevel, camera])
+
+  return null
+}
+
+function Scene({ exoplanet, starData, selectedPlanet, onSelectPlanet, isPlaying, zoomLevel }: ExoplanetMapProps) {
   const [currentTime, setCurrentTime] = useState(0)
 
   useFrame((state) => {
@@ -191,6 +255,10 @@ function Scene({ exoplanet, starData, selectedPlanet, onSelectPlanet, isPlaying 
     <>
       {/* Ambient light */}
       <ambientLight intensity={0.2} />
+
+      <CameraController zoomLevel={zoomLevel} />
+
+      <StarlightHeadliner />
 
       <InfiniteGrid />
 
@@ -220,21 +288,45 @@ function Scene({ exoplanet, starData, selectedPlanet, onSelectPlanet, isPlaying 
   )
 }
 
-export function ExoplanetMap({ exoplanet, starData, selectedPlanet, onSelectPlanet, isPlaying }: ExoplanetMapProps) {
+export function ExoplanetMap({
+  exoplanet,
+  starData,
+  selectedPlanet,
+  onSelectPlanet,
+  isPlaying,
+  zoomLevel,
+}: ExoplanetMapProps) {
+  const timeScale = useMemo(() => {
+    if (exoplanet.orbitalPeriod && !isNaN(exoplanet.orbitalPeriod)) {
+      const daysPerSecond = exoplanet.orbitalPeriod / (exoplanet.orbitalPeriod * 0.1)
+      return daysPerSecond.toFixed(1)
+    }
+    return "10.0"
+  }, [exoplanet.orbitalPeriod])
+
   return (
-    <Canvas
-      camera={{ position: [12, 10, 12], fov: 50 }}
-      style={{ background: "#000000" }} // Changed background to pure black
-      dpr={[1, 2]}
-      performance={{ min: 0.5 }}
-    >
-      <Scene
-        exoplanet={exoplanet}
-        starData={starData}
-        selectedPlanet={selectedPlanet}
-        onSelectPlanet={onSelectPlanet}
-        isPlaying={isPlaying}
-      />
-    </Canvas>
+    <div className="relative w-full h-full">
+      <Canvas
+        camera={{ position: [12, 10, 12], fov: 50 }}
+        style={{ background: "#000000" }}
+        dpr={[1, 2]}
+        performance={{ min: 0.5 }}
+      >
+        <Scene
+          exoplanet={exoplanet}
+          starData={starData}
+          selectedPlanet={selectedPlanet}
+          onSelectPlanet={onSelectPlanet}
+          isPlaying={isPlaying}
+          zoomLevel={zoomLevel}
+        />
+      </Canvas>
+
+      {/* Simulation speed indicator as fixed overlay in bottom left */}
+      <div className="absolute bottom-4 left-4 z-10 bg-background/90 border border-primary/50 px-3 py-2 font-mono pointer-events-none">
+        <div className="text-[10px] text-muted-foreground mb-1">SIMULATION SPEED</div>
+        <div className="text-xs text-primary font-bold">1 sec = {timeScale} Earth days</div>
+      </div>
+    </div>
   )
 }
