@@ -1,7 +1,8 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from joblib import load
+import xgboost as xgb
 import numpy as np
+import os
 
 app = FastAPI()
 
@@ -9,31 +10,20 @@ app = FastAPI()
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
-    allow_credentials=True, 
+    allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-import os
-import requests
-from joblib import load
+# Load the XGBoost model (scikit-learn wrapper)
+MODEL_PATH = "ExoPlanet_ClassifierXGBoost.joblib"
 
-MODEL_URL = "https://drive.google.com/uc?export=download&id=12rjb9yNzg1Jw8mFY22VXS4nEcbx_1Znw"
-MODEL_PATH = "ExoPlanet_Classifier.joblib"
-
-# Download model if not present locally
 if not os.path.exists(MODEL_PATH):
-    print("📦 Downloading model from Google Drive...")
-    response = requests.get(MODEL_URL)
-    response.raise_for_status()
-    with open(MODEL_PATH, "wb") as f:
-        f.write(response.content)
-    print("✅ Model downloaded!")
+    raise FileNotFoundError("Model file not found. Please upload ExoPlanet_Classifier.joblib")
 
-# Load the model
+from joblib import load
 model = load(MODEL_PATH)
-print("✅ Model loaded successfully!")
-
+print("✅ XGBoost model loaded successfully!")
 
 @app.get("/")
 def home():
@@ -41,30 +31,27 @@ def home():
 
 @app.post("/predict")
 async def predict(data: dict):
-    # Extract inputs
+    # Extract and reshape inputs
     inputs = np.array(data["inputs"]).reshape(1, -1)
 
-    # Make prediction
+    # Predictions
     pred_num = int(model.predict(inputs)[0])
-    proba = model.predict_proba(inputs)[0]  # probability breakdown
+    proba = model.predict_proba(inputs)[0]
 
-    # Label mapping
+    # Labels
     labels = {
         0: "Candidate Planet",
         1: "Confirmed Planet",
         2: "False Positive"
     }
 
-    # Confidence for the predicted class
     confidence = round(float(proba[pred_num]) * 100, 2)
 
-    # Build a breakdown dictionary
     breakdown = {
         "Candidate Planet": round(float(proba[0]) * 100, 2),
         "Confirmed Planet": round(float(proba[1]) * 100, 2),
         "False Positive": round(float(proba[2]) * 100, 2)
     }
-    message = f"Your ExoPlanet is a {labels[pred_num]} ({confidence}% confident)."
 
     return {
         "prediction_label": labels[pred_num],
@@ -72,5 +59,3 @@ async def predict(data: dict):
         "confidence_percent": confidence,
         "breakdown_percent": breakdown
     }
-
-
