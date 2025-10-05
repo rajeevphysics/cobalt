@@ -1,11 +1,10 @@
 from fastapi import FastAPI, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import StreamingResponse
+from fastapi.responses import JSONResponse
 import pandas as pd
 import io
 from joblib import load
-from fastapi.responses import JSONResponse
-
+import numpy as np
 
 app = FastAPI()
 
@@ -30,6 +29,7 @@ def home():
 async def predict_csv(file: UploadFile = File(...)):
     dataset = pd.read_csv(file.file)
 
+    # Columns expected by the model
     params = [
         "orbital_period",
         "planet_radius",
@@ -39,19 +39,23 @@ async def predict_csv(file: UploadFile = File(...)):
         "transit_duration"
     ]
 
-    X = dataset[params]
+    # Safely select expected columns (fill missing ones with 0)
+    X = dataset.reindex(columns=params, fill_value=0)
+
+    # Model predictions
     probabilities = model.predict_proba(X)
     prophecy = model.predict(X)
 
+    # Add predictions to dataset
     dataset["predictions"] = prophecy
     confidences = []
     breakdowns = []
 
     for prob in probabilities:
-        conf = round(max(prob) * 100, 2)
+        conf = round(float(max(prob)) * 100, 2)
         confidences.append(conf)
         breakdowns.append(
-            f"{round(100 * prob[0], 2)}%, {round(100 * prob[1], 2)}%, {round(100 * prob[2], 2)}%"
+            f"{round(float(prob[0]) * 100, 2)}%, {round(float(prob[1]) * 100, 2)}%, {round(float(prob[2]) * 100, 2)}%"
         )
 
     dataset["confidence(%)"] = confidences
@@ -62,11 +66,12 @@ async def predict_csv(file: UploadFile = File(...)):
         2: "False Positive"
     })
 
+    # --- SUMMARY STATS ---
     summary = {
         "Candidate Planets": int((dataset["predictions"] == "Candidate Planet").sum()),
         "Confirmed Planets": int((dataset["predictions"] == "Confirmed Planet").sum()),
         "False Positives": int((dataset["predictions"] == "False Positive").sum()),
-        "Average Confidence (%)": round(dataset["confidence(%)"].mean(), 2)
+        "Average Confidence (%)": float(round(dataset["confidence(%)"].mean(), 2))
     }
 
     # Convert DataFrame to CSV (as text)
@@ -75,9 +80,8 @@ async def predict_csv(file: UploadFile = File(...)):
     output.seek(0)
     csv_text = output.getvalue()
 
-    # Combine JSON + CSV text in one response
+    # Return both summary + CSV safely
     return JSONResponse(content={
         "summary": summary,
-        "csv": csv_text
+        "csv": str(csv_text)
     })
-
