@@ -1,0 +1,29 @@
+
+/* === DARK THEME === */
+@media (prefers-color-scheme: dark) {
+  :root {
+    /* Backgrounds */
+    --background-primary: #1e1e1e; /* same as --bg1 */
+    --background-secondary: #282828; /* same as --bg2 */
+    --background-tertiary: #414141; /* same as --bg3 */
+
+    /* UI & Dividers */
+    --border-color: #000; /* same as --background-divider */
+    --ui-1: #373737;
+    --ui-2: #515151;
+    --ui-3: #595959;
+
+    /* Text */
+    --text-normal: #dcdcdc; /* same as --tx1 */
+    --text-muted: #8c8c8c; /* same as --tx2 */
+    --text-subtle: #686868; /* same as --tx3 */
+
+    /* Accent / Interactive */
+    --interactive-accent: #027aff; /* same as --ax1 */
+    --interactive-accent-hover: #3f9bff; /* same as --ax2 */
+    --interactive-accent-alt: #007bff; /* same as --ax3 */
+
+    /* Highlight */
+    --highlight-accent: #3f638b; /* same as --hl1 */
+  }
+}
