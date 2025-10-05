@@ -59,7 +59,7 @@ async def predict_csv(file: UploadFile = File(...)):
         )
 
     dataset["confidence(%)"] = confidences
-    dataset["probability_breakdown"] = breakdowns
+    dataset["probability breakdown (Candidate, Confirmed, False Positive)"] = breakdowns
     dataset["predictions"] = dataset["predictions"].map({
         0: "Candidate Planet",
         1: "Confirmed Planet",
@@ -85,3 +85,4 @@ async def predict_csv(file: UploadFile = File(...)):
         "summary": summary,
         "csv": str(csv_text)
     })
+
