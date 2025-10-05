@@ -1,6 +1,6 @@
 // components/api.ts
 export async function getPrediction(inputs: number[]) {
-  const res = await fetch("https://YOUR-BACKEND-URL.onrender.com/predict", {
+  const res = await fetch("https://cobalt-90dg.onrender.com/predict", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ inputs })
