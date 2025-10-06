@@ -7,17 +7,15 @@ import os
 app = FastAPI()
 
 app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    CORSMiddleware(
+        allow_origins=["*"],
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
 )
 
 MODEL_PATH = "kepler_model.joblib"
-
-if not os.path.exists(MODEL_PATH):
-    raise FileNotFoundError(f"Model file not found: {MODEL_PATH}")
 
 model = load(MODEL_PATH)
 print("Model loaded successfully!")
@@ -33,7 +31,6 @@ EXPECTED_FEATURES = [
     "surface_gravity",
     "stellar_insolation",
     "transit_impact_parameter",
-    "score",
     "planet_equillibrium_temperature"
 ]
 
