@@ -2,72 +2,81 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from joblib import load
 import numpy as np
+import os
 
 app = FastAPI()
 
-# Allow website access (CORS)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Allow all for now
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-import os
-import requests
-from joblib import load
-
 MODEL_PATH = "kepler_model.joblib"
 
-# Download model if not present locally
 if not os.path.exists(MODEL_PATH):
-    print("Downloading model from Google Drive...")
-    response = requests.get(MODEL_URL)
-    response.raise_for_status()
-    with open(MODEL_PATH, "wb") as f:
-        f.write(response.content)
-    print("Model downloaded!")
+    raise FileNotFoundError(f"Model file not found: {MODEL_PATH}")
 
-# Load the model
 model = load(MODEL_PATH)
 print("Model loaded successfully!")
 
+EXPECTED_FEATURES = [
+    "orbital_period",
+    "planet_radius",
+    "stellar_effective_temperature",
+    "stellar_radius",
+    "transit_depth",
+    "transit_duration",
+    "apparent_brightness",
+    "surface_gravity",
+    "stellar_insolation",
+    "transit_impact_parameter",
+    "score",
+    "planet_equillibrium_temperature"
+]
 
 @app.get("/")
 def home():
-    return {"message": "Backend is running"}
+    return {"message": "Kepler AI Backend is running!"}
 
 @app.post("/predict")
 async def predict(data: dict):
-    # Extract inputs
-    inputs = np.array(data["inputs"]).reshape(1, -1)
+    try:
+        user_inputs = data.get("inputs", {})
+        inputs_filled = []
 
-    # Make prediction
-    pred_num = int(model.predict(inputs)[0])
-    proba = model.predict_proba(inputs)[0]  # probability breakdown
+        for feature in EXPECTED_FEATURES:
+            value = user_inputs.get(feature, None)
+            if value is None or value == "" or str(value).lower() == "nan":
+                value = 0.0
+            inputs_filled.append(float(value))
 
-    # Label mapping
-    labels = {
-        0: "Candidate Planet",
-        1: "Confirmed Planet",
-        2: "False Positive"
-    }
+        inputs = np.array(inputs_filled).reshape(1, -1)
+        pred_num = int(model.predict(inputs)[0])
+        proba = model.predict_proba(inputs)[0]
 
-    # Confidence for the predicted class
-    confidence = round(float(proba[pred_num]) * 100, 2)
+        labels = {
+            0: "Candidate Planet",
+            1: "Confirmed Planet",
+            2: "False Positive"
+        }
 
-    # Build a breakdown dictionary
-    breakdown = {
-        "Candidate Planet": round(float(proba[0]) * 100, 2),
-        "Confirmed Planet": round(float(proba[1]) * 100, 2),
-        "False Positive": round(float(proba[2]) * 100, 2)
-    }
-    message = f"Your ExoPlanet is a {labels[pred_num]} ({confidence}% confident)."
+        confidence = round(float(proba[pred_num]) * 100, 2)
+        breakdown = {
+            "Candidate Planet": round(float(proba[0]) * 100, 2),
+            "Confirmed Planet": round(float(proba[1]) * 100, 2),
+            "False Positive": round(float(proba[2]) * 100, 2)
+        }
 
-    return {
-        "overall_prediction": labels[pred_num],
-        "prediction_numeric": pred_num,
-        "prediction_confidence(%)": confidence,
-        "probability_breakdown(%)": breakdown
-    }
+        return {
+            "overall_prediction": labels[pred_num],
+            "prediction_numeric": pred_num,
+            "prediction_confidence(%)": confidence,
+            "probability_breakdown(%)": breakdown,
+            "filled_inputs_used": dict(zip(EXPECTED_FEATURES, inputs_filled))
+        }
+
+    except Exception as e:
+        return {"error": str(e)}
