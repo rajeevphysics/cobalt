@@ -1,0 +1,69 @@
+.navbar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 70px;
+  background: #000000;
+  border-bottom: 1px solid var(--ui1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
+  z-index: 1000;
+  backdrop-filter: blur(8px);
+}
+
+.navContainer {
+  max-width: 1400px;
+  margin: 0 auto;
+  height: 100%;
+  padding: 0 3rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.navLogo {
+  font-family: "Poppins", system-ui, sans-serif;
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: var(--ax1);
+  letter-spacing: -0.02em;
+  transition: color 0.3s ease, transform 0.2s ease;
+}
+
+.navLogo:hover {
+  color: var(--ax2);
+  transform: translateY(-1px);
+}
+
+.navLinks {
+  display: flex;
+  gap: 2.5rem;
+}
+
+.navLinks a {
+  text-decoration: none;
+  color: var(--tx1);
+  font-weight: 500;
+  font-size: 1.05rem;
+  position: relative;
+  transition: color 0.3s ease;
+}
+
+.navLinks a::after {
+  content: "";
+  position: absolute;
+  bottom: -6px;
+  left: 0;
+  width: 0%;
+  height: 2px;
+  background: var(--ax1);
+  transition: width 0.3s ease;
+}
+
+.navLinks a:hover {
+  color: var(--ax2);
+}
+
+.navLinks a:hover::after {
+  width: 100%;
+}

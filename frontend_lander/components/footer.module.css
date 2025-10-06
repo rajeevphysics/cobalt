@@ -1,0 +1,65 @@
+.footer {
+  position: relative;
+  background: #000000;
+  color: var(--tx1);
+  /* Reduced padding to make footer smaller */
+  padding: 40px 2rem 40px;
+  text-align: center;
+  overflow: hidden;
+}
+
+.footerContainer {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+/* New simpler title style instead of large slogan */
+.footerTitle {
+  font-size: clamp(2rem, 4vw, 3rem);
+  font-weight: 700;
+  color: var(--tx1);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin: 0;
+}
+
+.launchButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--ax1);
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  padding: 0 40px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  height: 56px;
+  min-width: 250px;
+  /* Removed box-shadow glow effect */
+}
+
+.launchButton:hover {
+  background: var(--ax2);
+  transform: translateY(-3px);
+  /* Removed box-shadow glow effect on hover */
+}
+
+@media (max-width: 768px) {
+  .footer {
+    padding: 30px 1.5rem 30px;
+  }
+
+  .launchButton {
+    font-size: 1rem;
+    height: 52px;
+    min-width: 220px;
+    padding: 0 32px;
+  }
+}

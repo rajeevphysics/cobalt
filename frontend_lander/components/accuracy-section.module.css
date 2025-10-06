@@ -1,0 +1,66 @@
+.infoSection {
+  background-color: #000000;
+  color: var(--tx1);
+  width: 100vw;
+  box-sizing: border-box;
+  padding: 80px 2rem;
+}
+
+.infoContainer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 60px;
+  max-width: 1200px;
+  margin: 0 auto;
+  flex-wrap: wrap;
+}
+
+.infoText {
+  flex: 1;
+  min-width: 320px;
+  text-align: left;
+}
+
+.infoTitle {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  font-size: clamp(4rem, 8vw, 7rem);
+  font-weight: 800;
+  color: var(--ax2);
+  margin-bottom: 1rem;
+}
+
+.accuracyNumber {
+  display: block;
+  line-height: 1;
+}
+
+.accuracyLabel {
+  display: block;
+  font-size: 0.35em;
+  line-height: 1;
+}
+
+.infoImageBox {
+  flex: 1;
+  min-width: 320px;
+  display: flex;
+  justify-content: center;
+}
+
+.infoImage {
+  width: 100%;
+  max-width: 500px;
+  border-radius: 12px;
+  border: 2px solid var(--ax1);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.6);
+  object-fit: cover;
+}
+
+.infoBody {
+  font-size: 1.2rem;
+  line-height: 1.8;
+  color: #ffffff; /* Changed from var(--tx2) to white */
+}

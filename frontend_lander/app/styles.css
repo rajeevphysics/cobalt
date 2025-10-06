@@ -1,0 +1,9 @@
+/* Combining all CSS files into one for Next.js */
+@import url("../src/theme.css");
+@import url("../src/header.css");
+@import url("../src/hero.css");
+@import url("../src/style.css");
+
+html {
+  scroll-behavior: smooth;
+}

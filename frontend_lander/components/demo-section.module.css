@@ -1,0 +1,28 @@
+.demoSection {
+  background-color: var(--bg1);
+  width: 100vw;
+  margin: 0;
+  padding: 80px 2rem;
+  color: var(--tx1);
+  text-align: center;
+  position: relative;
+  z-index: 1;
+}
+
+.demoContainer {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.demoVideo {
+  display: block;
+  width: 100%;
+  max-width: 700px;
+  border-radius: 12px;
+  border: 1px solid var(--ui2);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.6);
+  margin: 0 auto;
+}
