@@ -34,7 +34,7 @@ export default function HeroSection() {
 
         <img
           className={styles.typingSvg}
-          src="https://readme-typing-svg.herokuapp.com?font=Arial&size=60&duration=4800&pause=2000&color=FFFFFF&center=true&vCenter=true&width=1250&height=100&lines=Analyzing+Planetary+Data+.+.+.;Predicting+Habitability+.+.+.;Connecting+Science+and+Machine+Learning+.+.+."
+          src="https://readme-typing-svg.herokuapp.com?font=Arial&size=60&duration=4800&pause=2000&color=FFFFFF&center=true&vCenter=true&width=1250&height=100&lines=Analyzing+Planetary+Data+.+.+.;Predicting+Habitability+.+.+.;Connecting+Science+and+ML+.+.+."
           alt="Typing Animation"
         />
 
