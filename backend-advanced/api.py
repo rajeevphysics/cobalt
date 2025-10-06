@@ -55,7 +55,7 @@ BASE_FEATURES = [
 def home():
     return {"message": "Kepler AI Backend is running!"}
 
-@app.post("/predict_advanced")
+@app.post("/predict")
 async def predict(data: InputData):
     try:
         vals = data.dict()
