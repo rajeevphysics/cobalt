@@ -18,17 +18,8 @@ import os
 import requests
 from joblib import load
 
-MODEL_URL = "https://drive.google.com/uc?export=download&id=12rjb9yNzg1Jw8mFY22VXS4nEcbx_1Znw"
-MODEL_PATH = "ExoPlanet_Classifier.joblib"
+MODEL_PATH = "kepler_model.joblib"
 
-# Download model if not present locally
-if not os.path.exists(MODEL_PATH):
-    print("Downloading model from Google Drive...")
-    response = requests.get(MODEL_URL)
-    response.raise_for_status()
-    with open(MODEL_PATH, "wb") as f:
-        f.write(response.content)
-    print("Model downloaded!")
 
 # Load the model
 model = load(MODEL_PATH)
